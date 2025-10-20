@@ -20,6 +20,7 @@
     <h1>Token đã nhận</h1>
     <div class="actions">
       <button class="btn" id="copyBtn">Copy JSON</button>
+      <button class="btn" id="copyB64Btn">Copy Base64</button>
       <a class="btn secondary" href="/">Trang chủ</a>
       <a class="btn secondary" href="/tokens.json" target="_blank">Xem JSON</a>
     </div>
@@ -28,13 +29,29 @@
   </div>
 
   <script>
+    function toBase64(str){
+      try { return btoa(unescape(encodeURIComponent(str))); }
+      catch (e) { return btoa(str); }
+    }
+
     document.getElementById('copyBtn').addEventListener('click', async () => {
       try {
         const text = document.getElementById('tokenJson').innerText;
         await navigator.clipboard.writeText(text);
         alert('Đã copy token JSON vào clipboard!');
       } catch (e) {
-        alert('Copy thất bại, vui lòng copy thủ công.');
+        alert('Copy JSON thất bại, vui lòng copy thủ công.');
+      }
+    });
+
+    document.getElementById('copyB64Btn').addEventListener('click', async () => {
+      try {
+        const text = document.getElementById('tokenJson').innerText;
+        const b64 = toBase64(text);
+        await navigator.clipboard.writeText(b64);
+        alert('Đã copy Base64 của token JSON vào clipboard!');
+      } catch (e) {
+        alert('Copy Base64 thất bại, vui lòng copy thủ công.');
       }
     });
   </script>
