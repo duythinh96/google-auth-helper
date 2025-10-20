@@ -119,6 +119,17 @@ app.get('/tokens.json', (req, res) => {
   res.json(lastTokens);
 });
 
+app.get('/health-check', (req, res) => {
+  const envOk = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    envConfigured: envOk,
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Google Auth Helper đang chạy tại http://localhost:${PORT}`);
 });
