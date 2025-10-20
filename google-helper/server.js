@@ -92,6 +92,48 @@ app.get('/login', (req, res) => {
   }
 });
 
+// Route: login với quyền Google Drive
+app.get('/drive', (req, res) => {
+  try {
+    const overrides = {
+      clientId: req.query.client_id || undefined,
+      clientSecret: req.query.client_secret || undefined,
+      redirectUri: req.query.redirect_uri || undefined,
+    };
+
+    const serverEnvMissing = !(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+    if ((!overrides.clientId || !overrides.clientSecret) && serverEnvMissing) {
+      return res.status(200).send(`<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Nhập ENV</title></head><body><script>(function(){var clientId=sessionStorage.getItem('env:client_id')||prompt('Nhập GOOGLE_CLIENT_ID:');var clientSecret=sessionStorage.getItem('env:client_secret')||prompt('Nhập GOOGLE_CLIENT_SECRET:');var params=new URLSearchParams(window.location.search);var ru=sessionStorage.getItem('env:redirect_uri')||params.get('redirect_uri')||(location.origin+'/callback');if(clientId&&clientSecret){sessionStorage.setItem('env:client_id',clientId);sessionStorage.setItem('env:client_secret',clientSecret);sessionStorage.setItem('env:redirect_uri',ru);var qs=new URLSearchParams({client_id:clientId,client_secret:clientSecret,redirect_uri:ru}).toString();location.replace('/drive?'+qs);}else{alert('Thiếu thông tin ENV. Vui lòng nhập đầy đủ.');location.replace('/');}})();</script></body></html>`);
+    }
+
+    const oauth2Client = getOAuthClient(overrides);
+    const scopes = [
+      'openid','email','profile',
+      'https://www.googleapis.com/auth/drive.readonly'
+    ];
+
+    let state;
+    if (overrides.clientId && overrides.clientSecret) {
+      state = encodeState({
+        clientId: overrides.clientId,
+        clientSecret: overrides.clientSecret,
+        redirectUri: overrides.redirectUri || undefined,
+      });
+    }
+
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      prompt: 'consent',
+      scope: scopes,
+      state,
+    });
+    res.redirect(url);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err.message);
+  }
+});
+
 app.get('/callback', async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).send('Thiếu mã code từ Google callback');
