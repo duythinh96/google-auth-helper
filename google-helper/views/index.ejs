@@ -41,7 +41,7 @@
       </div>
       <div class="row">
         <label for="redirectUri">GOOGLE_REDIRECT_URI</label>
-        <input id="redirectUri" type="text" placeholder="http://localhost:<%= port %>/auth/google/callback" />
+        <input id="redirectUri" type="text" placeholder="http://localhost:<%= port %>/callback" />
       </div>
       <div class="actions">
         <button class="btn" id="saveEnv">Lưu ENV</button>
@@ -73,7 +73,7 @@
 
   <script>
     const PORT = document.body.dataset.port;
-    const DEFAULT_REDIRECT = `http://localhost:${PORT}/auth/google/callback`;
+    const DEFAULT_REDIRECT = `http://localhost:${PORT}/callback`;
 
     function loadEnvFromSession() {
       const ci = sessionStorage.getItem('env:client_id') || '';
@@ -105,20 +105,22 @@
     }
 
     function startLogin() {
-      const ci = sessionStorage.getItem('env:client_id');
-      const cs = sessionStorage.getItem('env:client_secret');
+      let ci = sessionStorage.getItem('env:client_id');
+      let cs = sessionStorage.getItem('env:client_secret');
       const ru = sessionStorage.getItem('env:redirect_uri') || DEFAULT_REDIRECT;
-
+    
+      if (!ci) ci = window.prompt('Nhập GOOGLE_CLIENT_ID:');
+      if (!cs) cs = window.prompt('Nhập GOOGLE_CLIENT_SECRET:');
+    
       if (ci && cs) {
-        const qs = new URLSearchParams({
-          client_id: ci,
-          client_secret: cs,
-          redirect_uri: ru,
-        }).toString();
-        window.location.href = `/auth/google?${qs}`;
+        sessionStorage.setItem('env:client_id', ci);
+        sessionStorage.setItem('env:client_secret', cs);
+        sessionStorage.setItem('env:redirect_uri', ru);
+        const qs = new URLSearchParams({ client_id: ci, client_secret: cs, redirect_uri: ru }).toString();
+        window.location.href = `/login?${qs}`;
       } else {
         // Fallback: dùng cấu hình .env trên server
-        window.location.href = '/auth/google';
+        window.location.href = '/login';
       }
     }
 

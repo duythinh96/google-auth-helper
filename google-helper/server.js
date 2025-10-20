@@ -4,7 +4,7 @@ const path = require('path');
 const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 9999;
 
 // View engine
 app.set('view engine', 'ejs');
@@ -36,7 +36,7 @@ function decodeState(str) {
 function getOAuthClient(overrides = {}) {
   const clientId = overrides.clientId || process.env.GOOGLE_CLIENT_ID;
   const clientSecret = overrides.clientSecret || process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri = overrides.redirectUri || process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/auth/google/callback`;
+  const redirectUri = overrides.redirectUri || process.env.GOOGLE_REDIRECT_URI || `http://localhost:${PORT}/callback`;
 
   if (!clientId || !clientSecret) {
     throw new Error('Thiếu clientId/clientSecret. Cấu hình .env hoặc nhập thông tin env từ UI.');
@@ -53,13 +53,19 @@ app.get('/', (req, res) => {
 });
 
 // Update: accept user-provided env via query and propagate via state
-app.get('/auth/google', (req, res) => {
+app.get('/login', (req, res) => {
   try {
     const overrides = {
       clientId: req.query.client_id || undefined,
       clientSecret: req.query.client_secret || undefined,
       redirectUri: req.query.redirect_uri || undefined,
     };
+
+    // Nếu thiếu client_id/client_secret và server không có ENV, hiển thị prompt để yêu cầu nhập
+    const serverEnvMissing = !(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+    if ((!overrides.clientId || !overrides.clientSecret) && serverEnvMissing) {
+      return res.status(200).send(`<!DOCTYPE html><html lang="vi"><head><meta charset="utf-8"><title>Nhập ENV</title></head><body><script>(function(){var clientId=sessionStorage.getItem('env:client_id')||prompt('Nhập GOOGLE_CLIENT_ID:');var clientSecret=sessionStorage.getItem('env:client_secret')||prompt('Nhập GOOGLE_CLIENT_SECRET:');var params=new URLSearchParams(window.location.search);var ru=sessionStorage.getItem('env:redirect_uri')||params.get('redirect_uri')||(location.origin+'/callback');if(clientId&&clientSecret){sessionStorage.setItem('env:client_id',clientId);sessionStorage.setItem('env:client_secret',clientSecret);sessionStorage.setItem('env:redirect_uri',ru);var qs=new URLSearchParams({client_id:clientId,client_secret:clientSecret,redirect_uri:ru}).toString();location.replace('/login?'+qs);}else{alert('Thiếu thông tin ENV. Vui lòng nhập đầy đủ.');location.replace('/');}})();</script></body></html>`);
+    }
 
     const oauth2Client = getOAuthClient(overrides);
     const scopes = ['openid', 'email', 'profile'];
@@ -86,7 +92,7 @@ app.get('/auth/google', (req, res) => {
   }
 });
 
-app.get('/auth/google/callback', async (req, res) => {
+app.get('/callback', async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).send('Thiếu mã code từ Google callback');
 
