@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Auth Helper</title>
+  <style>
+    :root { --bg:#f8fafc; --text:#0f172a; --muted:#64748b; --primary:#1d4ed8; --primary-dark:#1e40af; --border:#e2e8f0; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 40px; background: var(--bg); color: var(--text); }
+    .container { display: flex; gap: 24px; align-items: flex-start; }
+    .sidebar { width: 360px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .main { flex: 1; }
+    .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    h1 { margin-bottom: 8px; }
+    h2 { margin: 0 0 12px 0; font-size: 18px; }
+    label { font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; outline: none; font-size: 14px; }
+    input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(29,78,216,0.1); }
+    .row { margin-bottom: 12px; }
+    .btn { display: inline-block; background: var(--primary); color: #fff; padding: 12px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; border:none; cursor:pointer; }
+    .btn:hover { background: var(--primary-dark); }
+    .btn.secondary { background: #475569; }
+    .warn { background: #fff7ed; border: 1px solid #fdba74; color: #c2410c; padding: 12px; border-radius: 8px; margin-top: 16px; }
+    .meta { color: var(--muted); font-size: 14px; margin-top: 8px; }
+    .actions { display:flex; gap:8px; }
+    .small { font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body data-port="<%= port %>">
+  <div class="container">
+    <aside class="sidebar">
+      <h2>Cấu hình ENV (lưu tạm)</h2>
+      <p class="small">Các giá trị sẽ được lưu vào <strong>sessionStorage</strong> của trình duyệt và chỉ được gửi lên server khi bạn bắt đầu luồng đăng nhập. Không lưu trữ dài hạn phía server.</p>
+      <div class="row">
+        <label for="clientId">GOOGLE_CLIENT_ID</label>
+        <input id="clientId" type="text" placeholder="your_client_id.apps.googleusercontent.com" />
+      </div>
+      <div class="row">
+        <label for="clientSecret">GOOGLE_CLIENT_SECRET</label>
+        <input id="clientSecret" type="password" placeholder="your_client_secret" />
+      </div>
+      <div class="row">
+        <label for="redirectUri">GOOGLE_REDIRECT_URI</label>
+        <input id="redirectUri" type="text" placeholder="http://localhost:<%= port %>/auth/google/callback" />
+      </div>
+      <div class="actions">
+        <button class="btn" id="saveEnv">Lưu ENV</button>
+        <button class="btn secondary" id="clearEnv">Xoá ENV</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="card">
+        <h1>Google Auth Helper</h1>
+        <p>Ứng dụng hỗ trợ lấy token OAuth 2.0 từ Google một cách nhanh chóng.</p>
+
+        <% if (!envOk) { %>
+          <div class="warn">
+            <strong>Thiếu cấu hình .env:</strong> Bạn có thể nhập ENV ở panel bên trái và nhấn "Lưu ENV", rồi bấm đăng nhập để sử dụng cấu hình riêng.
+          </div>
+        <% } else { %>
+          <p class="meta">Server có sẵn cấu hình .env. Bạn có thể dùng trực tiếp, hoặc nhập ENV riêng ở panel bên trái.</p>
+        <% } %>
+
+        <p>
+          <button class="btn" id="loginBtn">Đăng nhập Google để lấy token</button>
+        </p>
+
+        <p class="meta">Server đang chạy trên cổng <strong><%= port %></strong></p>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const PORT = document.body.dataset.port;
+    const DEFAULT_REDIRECT = `http://localhost:${PORT}/auth/google/callback`;
+
+    function loadEnvFromSession() {
+      const ci = sessionStorage.getItem('env:client_id') || '';
+      const cs = sessionStorage.getItem('env:client_secret') || '';
+      const ru = sessionStorage.getItem('env:redirect_uri') || DEFAULT_REDIRECT;
+      document.getElementById('clientId').value = ci;
+      document.getElementById('clientSecret').value = cs;
+      document.getElementById('redirectUri').value = ru;
+    }
+
+    function saveEnvToSession() {
+      const ci = document.getElementById('clientId').value.trim();
+      const cs = document.getElementById('clientSecret').value.trim();
+      const ru = document.getElementById('redirectUri').value.trim() || DEFAULT_REDIRECT;
+      sessionStorage.setItem('env:client_id', ci);
+      sessionStorage.setItem('env:client_secret', cs);
+      sessionStorage.setItem('env:redirect_uri', ru);
+      alert('Đã lưu ENV vào sessionStorage!');
+    }
+
+    function clearEnvSession() {
+      sessionStorage.removeItem('env:client_id');
+      sessionStorage.removeItem('env:client_secret');
+      sessionStorage.removeItem('env:redirect_uri');
+      document.getElementById('clientId').value = '';
+      document.getElementById('clientSecret').value = '';
+      document.getElementById('redirectUri').value = DEFAULT_REDIRECT;
+      alert('Đã xoá ENV trong sessionStorage.');
+    }
+
+    function startLogin() {
+      const ci = sessionStorage.getItem('env:client_id');
+      const cs = sessionStorage.getItem('env:client_secret');
+      const ru = sessionStorage.getItem('env:redirect_uri') || DEFAULT_REDIRECT;
+
+      if (ci && cs) {
+        const qs = new URLSearchParams({
+          client_id: ci,
+          client_secret: cs,
+          redirect_uri: ru,
+        }).toString();
+        window.location.href = `/auth/google?${qs}`;
+      } else {
+        // Fallback: dùng cấu hình .env trên server
+        window.location.href = '/auth/google';
+      }
+    }
+
+    document.getElementById('saveEnv').addEventListener('click', saveEnvToSession);
+    document.getElementById('clearEnv').addEventListener('click', clearEnvSession);
+    document.getElementById('loginBtn').addEventListener('click', startLogin);
+    document.addEventListener('DOMContentLoaded', loadEnvFromSession);
+  </script>
+</body>
+</html>
