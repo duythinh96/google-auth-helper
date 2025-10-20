@@ -64,6 +64,7 @@
 
         <p>
           <button class="btn" id="loginBtn">Đăng nhập Google để lấy token</button>
+          <button class="btn secondary" id="driveBtn">Đăng nhập Google Drive</button>
         </p>
 
         <p class="meta">Server đang chạy trên cổng <strong><%= port %></strong></p>
@@ -124,9 +125,29 @@
       }
     }
 
+    function startDriveLogin() {
+      let ci = sessionStorage.getItem('env:client_id');
+      let cs = sessionStorage.getItem('env:client_secret');
+      const ru = sessionStorage.getItem('env:redirect_uri') || DEFAULT_REDIRECT;
+    
+      if (!ci) ci = window.prompt('Nhập GOOGLE_CLIENT_ID:');
+      if (!cs) cs = window.prompt('Nhập GOOGLE_CLIENT_SECRET:');
+    
+      if (ci && cs) {
+        sessionStorage.setItem('env:client_id', ci);
+        sessionStorage.setItem('env:client_secret', cs);
+        sessionStorage.setItem('env:redirect_uri', ru);
+        const qs = new URLSearchParams({ client_id: ci, client_secret: cs, redirect_uri: ru }).toString();
+        window.location.href = `/drive?${qs}`;
+      } else {
+        window.location.href = '/drive';
+      }
+    }
+
     document.getElementById('saveEnv').addEventListener('click', saveEnvToSession);
     document.getElementById('clearEnv').addEventListener('click', clearEnvSession);
     document.getElementById('loginBtn').addEventListener('click', startLogin);
+    document.getElementById('driveBtn').addEventListener('click', startDriveLogin);
     document.addEventListener('DOMContentLoaded', loadEnvFromSession);
   </script>
 </body>
