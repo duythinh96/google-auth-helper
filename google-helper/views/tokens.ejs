@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Token Google</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 40px; background: #f8fafc; color: #0f172a; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; max-width: 900px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    h1 { margin-bottom: 16px; }
+    pre { background: #0b1220; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow: auto; max-height: 60vh; }
+    .actions { margin: 12px 0 20px; }
+    .btn { display: inline-block; background: #1d4ed8; color: #fff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 8px; }
+    .btn.secondary { background: #475569; }
+    .note { font-size: 14px; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Token đã nhận</h1>
+    <div class="actions">
+      <button class="btn" id="copyBtn">Copy JSON</button>
+      <a class="btn secondary" href="/">Trang chủ</a>
+      <a class="btn secondary" href="/tokens.json" target="_blank">Xem JSON</a>
+    </div>
+    <pre id="tokenJson"><%= JSON.stringify(tokens, null, 2) %></pre>
+    <p class="note">Lưu ý: <code>refresh_token</code> chỉ xuất hiện lần đầu khi bạn cấp quyền với <code>access_type=offline</code> và <code>prompt=consent</code>.</p>
+  </div>
+
+  <script>
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      try {
+        const text = document.getElementById('tokenJson').innerText;
+        await navigator.clipboard.writeText(text);
+        alert('Đã copy token JSON vào clipboard!');
+      } catch (e) {
+        alert('Copy thất bại, vui lòng copy thủ công.');
+      }
+    });
+  </script>
+</body>
+</html>
