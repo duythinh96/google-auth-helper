@@ -132,7 +132,7 @@ app.get("/drive", (req, res) => {
       "openid",
       "email",
       "profile",
-      "https://www.googleapis.com/auth/drive.readonly",
+      "https://www.googleapis.com/auth/drive",
     ];
 
     let state;
